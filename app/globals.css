@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+@theme {
+  --color-sage: #4CAF85;
+  --color-coral: #F28B6E;
+  --color-sky: #7BB8D4;
+}
+
+body {
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+@layer utilities {
+  .flex-1 { flex: 1 1 0%; }
+}
