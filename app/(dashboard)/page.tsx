@@ -1,9 +1,14 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useStore } from "@/lib/store";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { formatRupiahInput, parseRupiah } from "@/lib/utils";
+import { toPng } from "html-to-image";
+import { Share2, Download, CheckCircle2 } from "lucide-react";
+import { Logo } from "@/components/Logo";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
 import { 
   AreaChart, 
   Area, 
@@ -18,9 +23,43 @@ import {
 } from 'recharts';
 
 export default function DashboardPage() {
-  const { initialBalance, setInitialBalance, transactions, categories, budgets, accounts, addTransaction } = useStore();
+  const { initialBalance, setInitialBalance, transactions, categories, budgets, accounts, addTransaction, user } = useStore();
   const [mounted, setMounted] = useState(false);
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
+  const [isSharePreviewOpen, setIsSharePreviewOpen] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const shareRef = useRef<HTMLDivElement>(null);
+
+  // Global Filters
+  const currentMonthStr = new Date().toISOString().slice(0, 7);
+  const [selectedMonth, setSelectedMonth] = useState(currentMonthStr);
+
+  const handleDownloadImage = useCallback(async () => {
+    if (shareRef.current === null) return;
+    setIsSharing(true);
+    
+    try {
+      const dataUrl = await toPng(shareRef.current, {
+        cacheBust: true,
+        backgroundColor: '#FFFFFF',
+        pixelRatio: 3,
+        style: {
+          padding: '40px',
+          borderRadius: '40px',
+        }
+      });
+      
+      const link = document.createElement('a');
+      link.download = `flowance-expense-${selectedMonth}.png`;
+      link.href = dataUrl;
+      link.click();
+      setIsSharePreviewOpen(false);
+    } catch (err) {
+      console.error('Download failed', err);
+    } finally {
+      setIsSharing(false);
+    }
+  }, [shareRef, selectedMonth]);
   
   // Transaction Form State
   const [txType, setTxType] = useState<'INCOME'|'EXPENSE'>('EXPENSE');
@@ -29,10 +68,6 @@ export default function DashboardPage() {
   const [txAccountId, setTxAccountId] = useState(accounts[0]?.id || '');
   const [txDate, setTxDate] = useState(new Date().toISOString().split('T')[0]);
   const [txNote, setTxNote] = useState('');
-
-  // Global Filters
-  const currentMonthStr = new Date().toISOString().slice(0, 7);
-  const [selectedMonth, setSelectedMonth] = useState(currentMonthStr);
 
   // Category Details Modal State
   const [selectedCatDetails, setSelectedCatDetails] = useState<string | null>(null);
@@ -166,6 +201,106 @@ export default function DashboardPage() {
 
   return (
     <>
+      {/* Share Preview Modal */}
+      <Dialog open={isSharePreviewOpen} onOpenChange={setIsSharePreviewOpen}>
+        <DialogContent className="max-w-2xl p-0 overflow-hidden bg-slate-50 border-none">
+          <DialogHeader className="p-6 bg-white border-b border-slate-100">
+            <DialogTitle className="flex items-center gap-2">
+              <Share2 className="w-5 h-5 text-[#4CAF85]" />
+              Pratinjau Pengeluaran
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="p-8 flex flex-col items-center">
+            {/* The Actual Card to Capture */}
+            <div 
+              ref={shareRef}
+              className="w-full max-w-sm bg-white rounded-[40px] shadow-2xl shadow-slate-200 p-8 border border-slate-100 relative overflow-hidden"
+            >
+              {/* Decorative Background Elements */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#4CAF85]/5 rounded-full -mr-16 -mt-16"></div>
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-[#F28B6E]/5 rounded-full -ml-16 -mb-16"></div>
+
+              <div className="relative z-10">
+                <div className="flex justify-between items-start mb-10">
+                  <Logo size={20} className="gap-2" />
+                  <div className="text-right">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Bulan</p>
+                    <p className="text-xs font-bold text-slate-900">{format(new Date(selectedMonth), 'MMMM yyyy', { locale: id })}</p>
+                  </div>
+                </div>
+
+                <div className="mb-10">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Total Pengeluaran</p>
+                  <h2 className="text-4xl font-black text-slate-900 tracking-tight">{formatIDR(totalExpense).split(',')[0]}</h2>
+                  <div className="w-12 h-1.5 bg-[#F28B6E] rounded-full mt-4"></div>
+                </div>
+
+                {/* Mini Chart */}
+                <div className="h-32 w-full mb-10">
+                   <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={chartData}>
+                        <defs>
+                          <linearGradient id="shareGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#F28B6E" stopOpacity={0.2}/>
+                            <stop offset="95%" stopColor="#F28B6E" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <Area 
+                          type="monotone" 
+                          dataKey="expense" 
+                          stroke="#F28B6E" 
+                          strokeWidth={4} 
+                          fill="url(#shareGrad)" 
+                          animationDuration={0}
+                        />
+                      </AreaChart>
+                   </ResponsiveContainer>
+                </div>
+
+                <div className="flex items-center justify-between pt-8 border-t border-slate-50">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs border border-slate-200 overflow-hidden">
+                      <img src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.displayName}`} alt="User" className="w-full h-full object-cover" />
+                    </div>
+                    <p className="text-[10px] font-bold text-slate-700">{user.displayName}</p>
+                  </div>
+                  <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">flowance.app</p>
+                </div>
+              </div>
+
+              {/* Watermark */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-12 pointer-events-none opacity-[0.03] select-none">
+                 <p className="text-6xl font-black whitespace-nowrap">FLOWANCE FLOWANCE</p>
+              </div>
+            </div>
+
+            <div className="mt-8 flex flex-col w-full gap-3">
+              <button 
+                onClick={handleDownloadImage}
+                disabled={isSharing}
+                className="w-full h-12 bg-[#4CAF85] text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-[#4CAF85]/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
+              >
+                {isSharing ? (
+                   <span className="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full"></span>
+                ) : (
+                  <>
+                    <Download className="w-5 h-5" />
+                    Simpan Gambar
+                  </>
+                )}
+              </button>
+              <button 
+                onClick={() => setIsSharePreviewOpen(false)}
+                className="w-full h-12 bg-white text-slate-500 rounded-2xl font-bold border border-slate-200 hover:bg-slate-50 transition-all"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Detail Kategori Modal */}
       <Dialog open={!!selectedCatDetails} onOpenChange={(open) => !open && setSelectedCatDetails(null)}>
         <DialogContent className="max-w-xl">
@@ -207,7 +342,15 @@ export default function DashboardPage() {
             <input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="bg-transparent text-[9px] md:text-sm font-medium text-slate-600 outline-none cursor-pointer w-20 md:w-auto" />
           </div>
         </div>
-        <Dialog open={isTxModalOpen} onOpenChange={setIsTxModalOpen}>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => setIsSharePreviewOpen(true)}
+            className="flex items-center gap-2 px-3 py-1.5 md:py-2 text-xs md:text-sm font-semibold text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-all"
+          >
+            <Share2 className="w-4 h-4 text-[#4CAF85]" />
+            <span className="hidden sm:inline">Bagikan</span>
+          </button>
+          <Dialog open={isTxModalOpen} onOpenChange={setIsTxModalOpen}>
           <DialogTrigger asChild>
             <button data-tx-trigger="true" className="hidden md:flex bg-[#4CAF85] text-white px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-semibold shadow-sm hover:bg-[#4CAF85]/90 items-center gap-1 md:gap-2 whitespace-nowrap">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="md:w-[18px] md:h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
@@ -259,7 +402,8 @@ export default function DashboardPage() {
             </form>
           </DialogContent>
         </Dialog>
-      </header>
+      </div>
+    </header>
 
       {/* Scrollable Area */}
       <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-4 md:space-y-6">

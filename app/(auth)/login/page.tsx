@@ -6,31 +6,38 @@ import { Wallet, ArrowRight, ShieldCheck, PieChart, Target } from "lucide-react"
 import Link from "next/link";
 import { motion } from "motion/react";
 
+import { signIn } from "next-auth/react";
+import { Logo } from "@/components/Logo";
+
 export default function LoginPage() {
   const router = useRouter();
-  const [userId, setUserId] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
-    // Demo credentials
-    if (userId === "alam" && password === "alam") {
-      // Simulate success
-      setTimeout(() => {
-        localStorage.setItem("isLoggedIn", "true");
-        localStorage.setItem("user", JSON.stringify({ name: "Alam", id: "alam" }));
-        router.push("/");
-      }, 1000);
-    } else {
-      setTimeout(() => {
-        setError("ID atau password salah. Coba: alam / alam");
+    try {
+      const res = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (res?.error) {
+        setError(res.error);
         setIsLoading(false);
-      }, 800);
+      } else {
+        router.push("/");
+        router.refresh();
+      }
+    } catch (err) {
+      setError("Terjadi kesalahan saat masuk.");
+      setIsLoading(false);
     }
   };
 
@@ -43,10 +50,7 @@ export default function LoginPage() {
         
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-12">
-            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-[#4CAF85] shadow-xl">
-              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20"/><path d="m17 5-5-3-5 3"/><path d="m17 19-5 3-5-3"/><rect x="2" y="9" width="20" height="6" rx="2"/></svg>
-            </div>
-            <span className="text-3xl font-extrabold tracking-tighter">Flowance</span>
+            <Logo iconClassName="w-12 h-12" size={28} className="text-white" />
           </div>
 
           <motion.div 
@@ -122,13 +126,13 @@ export default function LoginPage() {
             )}
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">User ID</label>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Email Address</label>
               <div className="relative">
                 <input 
-                  type="text" 
-                  value={userId}
-                  onChange={(e) => setUserId(e.target.value)}
-                  placeholder="Masukkan ID Anda" 
+                  type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@company.com" 
                   className="w-full h-12 px-4 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4CAF85]/50 focus:border-[#4CAF85] transition-all text-slate-900 font-medium"
                   required
                 />
@@ -169,7 +173,7 @@ export default function LoginPage() {
           </form>
 
           <p className="mt-10 text-center text-slate-500 text-sm">
-            Belum punya akun? <Link href="#" className="font-bold text-[#4CAF85] hover:underline">Daftar Sekarang</Link>
+            Belum punya akun? <Link href="/signup" className="font-bold text-[#4CAF85] hover:underline">Daftar Sekarang</Link>
           </p>
         </motion.div>
       </div>

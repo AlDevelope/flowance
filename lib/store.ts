@@ -62,14 +62,22 @@ interface AppState {
   deleteCategory: (id: string) => void;
 
   transactions: Transaction[];
-  addTransaction: (transaction: Omit<Transaction, 'id'>) => void;
-  updateTransaction: (id: string, transaction: Omit<Transaction, 'id'>) => void;
-  deleteTransaction: (id: string) => void;
+  addTransaction: (transaction: Omit<Transaction, 'id'>) => Promise<void>;
+  updateTransaction: (id: string, transaction: Omit<Transaction, 'id'>) => Promise<void>;
+  deleteTransaction: (id: string) => Promise<void>;
 
   budgets: Budget[];
   addBudget: (budget: Omit<Budget, 'id'>) => void;
   updateBudget: (id: string, budget: Omit<Budget, 'id'>) => void;
   deleteBudget: (id: string) => void;
+
+  hydrate: (data: {
+    accounts?: Account[];
+    categories?: Category[];
+    transactions?: Transaction[];
+    budgets?: Budget[];
+    user?: Partial<AppState['user']>;
+  }) => void;
 }
 
 const defaultCategories: Category[] = [
@@ -128,15 +136,56 @@ export const useStore = create<AppState>()(
       })),
 
       transactions: [],
-      addTransaction: (transaction) => set((state) => ({
-        transactions: [{ ...transaction, id: Math.random().toString(36).substr(2, 9) }, ...state.transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      })),
-      updateTransaction: (id, updatedTransaction) => set((state) => ({
-        transactions: state.transactions.map((t) => t.id === id ? { ...updatedTransaction, id } : t).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      })),
-      deleteTransaction: (id) => set((state) => ({
-        transactions: state.transactions.filter((t) => t.id !== id)
-      })),
+      addTransaction: async (transaction) => {
+        const tempId = Math.random().toString(36).substr(2, 9);
+        set((state) => ({
+          transactions: [{ ...transaction, id: tempId }, ...state.transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        }));
+
+        try {
+          const res = await fetch('/api/transactions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(transaction)
+          });
+          if (res.ok) {
+            const savedTx = await res.json();
+            set((state) => ({
+              transactions: state.transactions.map(t => t.id === tempId ? { ...savedTx, id: savedTx.id } : t)
+            }));
+          }
+        } catch (error) {
+          console.error("Failed to sync transaction", error);
+        }
+      },
+      updateTransaction: async (id, updatedTransaction) => {
+        set((state) => ({
+          transactions: state.transactions.map((t) => t.id === id ? { ...updatedTransaction, id } : t).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        }));
+
+        try {
+          await fetch(`/api/transactions/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedTransaction)
+          });
+        } catch (error) {
+          console.error("Failed to sync updated transaction", error);
+        }
+      },
+      deleteTransaction: async (id) => {
+        set((state) => ({
+          transactions: state.transactions.filter((t) => t.id !== id)
+        }));
+
+        try {
+          await fetch(`/api/transactions/${id}`, {
+            method: 'DELETE'
+          });
+        } catch (error) {
+          console.error("Failed to delete transaction", error);
+        }
+      },
 
       budgets: [],
       addBudget: (budget) => set((state) => ({
@@ -147,6 +196,14 @@ export const useStore = create<AppState>()(
       })),
       deleteBudget: (id) => set((state) => ({
         budgets: state.budgets.filter((b) => b.id !== id)
+      })),
+      
+      hydrate: (data) => set((state) => ({
+        accounts: data.accounts || state.accounts,
+        categories: data.categories || state.categories,
+        transactions: data.transactions || state.transactions,
+        budgets: data.budgets || state.budgets,
+        user: { ...state.user, ...data.user }
       })),
     }),
     {

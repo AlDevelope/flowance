@@ -1,23 +1,87 @@
 "use client";
 
-import { Wallet, Bell, Search, X } from "lucide-react";
+import { Wallet, Bell, Search, X, TrendingUp, TrendingDown, AlertCircle } from "lucide-react";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useStore } from "@/lib/store";
+import { Logo } from "./Logo";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
 
 export function MobileHeader() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
-  const { searchTerm, setSearchTerm, user } = useStore();
+  const { searchTerm, setSearchTerm, user, transactions } = useStore();
+
+  const notifications = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    const lastMonthDate = new Date(currentYear, currentMonth - 1, 1);
+    const lastMonth = lastMonthDate.getMonth();
+    const lastYear = lastMonthDate.getFullYear();
+
+    const currentTransactions = transactions.filter(t => {
+      const d = new Date(t.date);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    });
+
+    const lastMonthTransactions = transactions.filter(t => {
+      const d = new Date(t.date);
+      return d.getMonth() === lastMonth && d.getFullYear() === lastYear;
+    });
+
+    const currentIncome = currentTransactions.filter(t => t.type === 'INCOME').reduce((acc, t) => acc + t.amount, 0);
+    const currentExpense = currentTransactions.filter(t => t.type === 'EXPENSE').reduce((acc, t) => acc + t.amount, 0);
+    const lastMonthExpense = lastMonthTransactions.filter(t => t.type === 'EXPENSE').reduce((acc, t) => acc + t.amount, 0);
+
+    const reports = [];
+
+    // Compare with last month
+    if (lastMonthExpense > 0) {
+      const diff = ((currentExpense - lastMonthExpense) / lastMonthExpense) * 100;
+      if (diff > 0) {
+        reports.push({
+          id: 'diff',
+          title: "Kenaikan Pengeluaran",
+          desc: `Pengeluaran kamu naik ${diff.toFixed(1)}% dibanding bulan ${format(lastMonthDate, 'MMMM', { locale: id })}.`,
+          type: 'warning',
+          icon: TrendingUp
+        });
+      } else if (diff < 0) {
+        reports.push({
+          id: 'diff',
+          title: "Penurunan Pengeluaran",
+          desc: `Hebat! Pengeluaran kamu turun ${Math.abs(diff).toFixed(1)}% dibanding bulan lalu.`,
+          type: 'success',
+          icon: TrendingDown
+        });
+      }
+    }
+
+    // Ratio check
+    if (currentIncome > 0) {
+      const ratio = (currentExpense / currentIncome) * 100;
+      if (ratio > 80) {
+        reports.push({
+          id: 'ratio',
+          title: "Waspada Pengeluaran",
+          desc: `Kamu sudah menggunakan ${ratio.toFixed(0)}% dari total pendapatan bulan ini.`,
+          type: 'danger',
+          icon: AlertCircle
+        });
+      }
+    }
+
+    return reports;
+  }, [transactions]);
 
   return (
     <header className="md:hidden sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100 px-4 h-16 flex items-center justify-between">
-      <div className="flex items-center gap-2.5">
-        <div className="w-9 h-9 bg-[#4CAF85] rounded-xl flex items-center justify-center text-white shadow-sm shadow-[#4CAF85]/20">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20"/><path d="m17 5-5-3-5 3"/><path d="m17 19-5 3-5-3"/><rect x="2" y="9" width="20" height="6" rx="2"/></svg>
-        </div>
-        <span className="font-bold text-slate-900 tracking-tight text-lg">Flowance</span>
-      </div>
+      <Link href="/" className="flex items-center gap-2.5">
+        <Logo size={20} iconClassName="w-9 h-9" className="gap-2.5" />
+      </Link>
       
       <div className="flex items-center gap-1">
         <button 
@@ -34,7 +98,9 @@ export function MobileHeader() {
           className="p-2 text-slate-400 hover:text-slate-600 transition-colors relative"
         >
           <Bell className="w-5 h-5" />
-          <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+          {notifications.length > 0 && (
+            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+          )}
         </button>
 
         {isNotifOpen && (
@@ -45,24 +111,50 @@ export function MobileHeader() {
               </button>
               <h3 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
                 <Bell className="w-6 h-6 text-[#4CAF85]" />
-                Notifikasi
+                Insight Keuangan
               </h3>
-              <div className="space-y-4">
-                {[
-                  { title: "Anggaran Makan", desc: "Sisa anggaran makan kamu tinggal 10%.", time: "2 jam yang lalu" },
-                  { title: "Pemasukan Baru", desc: "Gaji bulan ini telah masuk ke rekening.", time: "5 jam yang lalu" },
-                  { title: "Mingguan Selesai", desc: "Laporan pengeluaran mingguan sudah siap.", time: "Kemarin" }
-                ].map((n, i) => (
-                  <div key={i} className="p-3 bg-slate-50 rounded-xl border border-slate-100 italic">
-                    <p className="text-sm font-bold text-slate-800">{n.title}</p>
-                    <p className="text-xs text-slate-600 mt-0.5">{n.desc}</p>
-                    <p className="text-[10px] text-slate-400 mt-2">{n.time}</p>
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                {notifications.length > 0 ? (
+                  notifications.map((n) => (
+                    <div key={n.id} className={cn(
+                      "p-4 rounded-2xl border flex gap-3",
+                      n.type === 'danger' ? "bg-red-50 border-red-100" : 
+                      n.type === 'warning' ? "bg-amber-50 border-amber-100" : "bg-emerald-50 border-emerald-100"
+                    )}>
+                      <div className={cn(
+                        "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+                        n.type === 'danger' ? "bg-red-500 text-white" : 
+                        n.type === 'warning' ? "bg-amber-500 text-white" : "bg-emerald-500 text-white"
+                      )}>
+                        <n.icon className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <p className={cn(
+                          "text-sm font-bold",
+                          n.type === 'danger' ? "text-red-900" : 
+                          n.type === 'warning' ? "text-amber-900" : "text-emerald-900"
+                        )}>{n.title}</p>
+                        <p className={cn(
+                          "text-xs mt-0.5 leading-relaxed",
+                          n.type === 'danger' ? "text-red-700 font-medium" : 
+                          n.type === 'warning' ? "text-amber-700 font-medium" : "text-emerald-700 font-medium"
+                        )}>{n.desc}</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                      <Bell className="w-8 h-8" />
+                    </div>
+                    <p className="text-slate-500 font-medium">Semua terkendali!</p>
+                    <p className="text-xs text-slate-400 mt-1">Belum ada notifikasi baru untuk kamu.</p>
                   </div>
-                ))}
+                )}
               </div>
               <button 
                 onClick={() => setIsNotifOpen(false)}
-                className="w-full mt-6 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-sm"
+                className="w-full mt-6 py-3 bg-slate-900 text-white rounded-2xl font-bold text-sm shadow-lg shadow-slate-900/20"
               >
                 Tutup
               </button>

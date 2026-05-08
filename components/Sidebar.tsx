@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { Logo } from "./Logo";
 import { 
   LayoutDashboard, 
   ArrowRightLeft, 
@@ -25,19 +27,16 @@ export function Sidebar() {
   const pathname = usePathname();
   const { user } = useStore();
 
-  const handleLogout = () => {
-    localStorage.removeItem("isLoggedIn");
-    localStorage.removeItem("user");
-    window.location.href = "/login";
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: "/login" });
   };
 
   return (
     <aside className="w-60 flex-shrink-0 bg-[#F9FAFB] border-r border-[#E5E7EB] flex flex-col">
-      <div className="p-6 flex items-center gap-3">
-        <div className="w-10 h-10 bg-[#4CAF85] rounded-xl flex items-center justify-center text-white shadow-sm">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20"/><path d="m17 5-5-3-5 3"/><path d="m17 19-5 3-5-3"/><rect x="2" y="9" width="20" height="6" rx="2"/></svg>
-        </div>
-        <span className="text-xl font-bold tracking-tight text-slate-900">Flowance</span>
+      <div className="p-6">
+        <Link href="/">
+          <Logo />
+        </Link>
       </div>
       
       <nav className="flex-1 px-4 space-y-1">
@@ -68,26 +67,33 @@ export function Sidebar() {
         </div>
       </div>
 
-      <Link 
-        href="/profile"
+      <div 
         className={cn(
-          "border-t border-[#E5E7EB] p-4 flex items-center gap-3 hover:bg-slate-50 transition-colors",
+          "border-t border-[#E5E7EB] p-4 flex items-center gap-3",
           pathname === "/profile" && "bg-white"
         )}
       >
-        <div className="w-8 h-8 rounded-full bg-slate-200 border border-slate-300 overflow-hidden">
-          <img 
-            src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.displayName}`} 
-            alt="User" 
-            className="w-full h-full object-cover"
-          />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-slate-900 truncate">{user.displayName}</p>
-          <p className="text-[10px] text-slate-500 truncate">{user.email || 'Pengaturan Profil'}</p>
-        </div>
-        <LogOut onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleLogout(); }} className="w-4 h-4 text-slate-400 hover:text-red-500 transition-colors cursor-pointer" />
-      </Link>
+        <Link href="/profile" className="flex items-center gap-3 flex-1 min-w-0 group">
+          <div className="w-8 h-8 rounded-full bg-slate-200 border border-slate-300 overflow-hidden group-hover:ring-2 group-hover:ring-[#4CAF85] transition-all">
+            <img 
+              src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.displayName}`} 
+              alt="User" 
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-slate-900 truncate">{user.displayName}</p>
+            <p className="text-[10px] text-slate-500 truncate">{user.email || 'Pengaturan Profil'}</p>
+          </div>
+        </Link>
+        <button 
+          onClick={handleLogout}
+          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+          title="Keluar"
+        >
+          <LogOut className="w-5 h-5" />
+        </button>
+      </div>
     </aside>
   );
 }

@@ -1,16 +1,78 @@
 generator client {
   provider = "prisma-client-js"
 }
+
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model User {
-  id           String        @id @default(cuid())
-  name         String?
-  email        String        @unique
-  password     String
-  currency     String        @default("IDR")
+  id            String          @id @default(cuid())
+  name          String?
+  email         String          @unique
+  password      String?
+  image         String?
+  currency      String          @default("IDR")
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  accounts      Account[]
+  categories    Category[]
+  transactions  Transaction[]
+  budgets       Budget[]
 }
-// Stub to satisfy generator
+
+model Account {
+  id           String        @id @default(cuid())
+  userId       String
+  name         String
+  balance      Float         @default(0)
+  color        String
+  icon         String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Category {
+  id           String        @id @default(cuid())
+  userId       String
+  name         String
+  type         String        // INCOME or EXPENSE
+  color        String
+  icon         String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  budgets      Budget[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Transaction {
+  id           String    @id @default(cuid())
+  userId       String
+  accountId    String
+  categoryId   String
+  amount       Float
+  type         String    // INCOME or EXPENSE
+  date         DateTime
+  note         String?
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account      Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category     Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Budget {
+  id           String    @id @default(cuid())
+  userId       String
+  categoryId   String
+  amount       Float
+  month        String    // YYYY-MM format
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category     Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
