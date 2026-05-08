@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { 
   LayoutDashboard, 
@@ -22,6 +23,7 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { user } = useStore();
 
   const handleLogout = () => {
     localStorage.removeItem("isLoggedIn");
@@ -66,16 +68,26 @@ export function Sidebar() {
         </div>
       </div>
 
-      <div className="border-t border-[#E5E7EB] p-4 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-slate-200 border border-slate-300"></div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-slate-900 truncate">Alam</p>
-          <p className="text-[10px] text-slate-500 truncate">alam@flowance.io</p>
+      <Link 
+        href="/profile"
+        className={cn(
+          "border-t border-[#E5E7EB] p-4 flex items-center gap-3 hover:bg-slate-50 transition-colors",
+          pathname === "/profile" && "bg-white"
+        )}
+      >
+        <div className="w-8 h-8 rounded-full bg-slate-200 border border-slate-300 overflow-hidden">
+          <img 
+            src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.displayName}`} 
+            alt="User" 
+            className="w-full h-full object-cover"
+          />
         </div>
-        <button onClick={handleLogout} className="text-slate-400 hover:text-red-500 transition-colors">
-          <LogOut className="w-4 h-4" />
-        </button>
-      </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-slate-900 truncate">{user.displayName}</p>
+          <p className="text-[10px] text-slate-500 truncate">{user.email || 'Pengaturan Profil'}</p>
+        </div>
+        <LogOut onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleLogout(); }} className="w-4 h-4 text-slate-400 hover:text-red-500 transition-colors cursor-pointer" />
+      </Link>
     </aside>
   );
 }

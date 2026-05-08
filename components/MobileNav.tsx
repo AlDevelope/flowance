@@ -9,7 +9,7 @@ import {
   ArrowRightLeft, 
   Plus,
   Target, 
-  Bell
+  PieChart
 } from "lucide-react";
 
 const navItems = [
@@ -17,7 +17,7 @@ const navItems = [
   { name: "Riwayat", href: "/transactions", icon: ArrowRightLeft },
   { name: "Tambah", href: "#", isAction: true },
   { name: "Anggaran", href: "/budgets", icon: Target },
-  { name: "Notif", href: "/reports", icon: Bell },
+  { name: "Laporan", href: "/reports", icon: PieChart },
 ];
 
 export function MobileNav() {

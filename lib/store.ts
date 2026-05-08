@@ -43,6 +43,14 @@ interface AppState {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
 
+  user: {
+    displayName: string;
+    email: string;
+    isGoogleConnected: boolean;
+    avatar?: string;
+  };
+  updateUser: (data: Partial<AppState['user']>) => void;
+
   accounts: Account[];
   addAccount: (account: Omit<Account, 'id'>) => void;
   updateAccount: (id: string, account: Omit<Account, 'id'>) => void;
@@ -87,6 +95,15 @@ export const useStore = create<AppState>()(
 
       searchTerm: '',
       setSearchTerm: (term) => set({ searchTerm: term }),
+
+      user: {
+        displayName: 'User Flowance',
+        email: '',
+        isGoogleConnected: false,
+      },
+      updateUser: (data) => set((state) => ({
+        user: { ...state.user, ...data }
+      })),
 
       accounts: defaultAccounts,
       addAccount: (account) => set((state) => ({

@@ -1,14 +1,14 @@
 "use client";
 
 import { Wallet, Bell, Search, X } from "lucide-react";
-import Image from "next/image";
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
 
 export function MobileHeader() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
-  const { searchTerm, setSearchTerm } = useStore();
+  const { searchTerm, setSearchTerm, user } = useStore();
 
   return (
     <header className="md:hidden sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100 px-4 h-16 flex items-center justify-between">
@@ -69,15 +69,13 @@ export function MobileHeader() {
             </div>
           </div>
         )}
-        <div className="w-8 h-8 rounded-full border border-slate-200 overflow-hidden ml-1">
-          <Image 
-            src="https://picsum.photos/seed/user/100/100" 
+        <Link href="/profile" className="w-8 h-8 rounded-full border border-slate-200 overflow-hidden ml-1 hover:border-[#4CAF85] transition-colors">
+          <img 
+            src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.displayName}`} 
             alt="Profile" 
-            width={32} 
-            height={32}
-            className="object-cover"
+            className="w-full h-full object-cover"
           />
-        </div>
+        </Link>
       </div>
 
       {isSearchOpen && (

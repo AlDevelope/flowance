@@ -5,6 +5,7 @@ import { MobileNav } from "@/components/MobileNav";
 import { MobileHeader } from "@/components/MobileHeader";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { SessionProvider } from "next-auth/react";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -22,15 +23,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!isReady) return null;
 
   return (
-    <div className="flex h-screen bg-white font-sans text-slate-800 overflow-hidden">
-      <div className="hidden md:flex">
-        <Sidebar />
+    <SessionProvider>
+      <div className="flex h-screen bg-white font-sans text-slate-800 overflow-hidden">
+        <div className="hidden md:flex">
+          <Sidebar />
+        </div>
+        <main className="flex-1 flex flex-col overflow-hidden pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
+          <MobileHeader />
+          {children}
+        </main>
+        <MobileNav />
       </div>
-      <main className="flex-1 flex flex-col overflow-hidden pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
-        <MobileHeader />
-        {children}
-      </main>
-      <MobileNav />
-    </div>
+    </SessionProvider>
   );
 }
