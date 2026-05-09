@@ -215,63 +215,74 @@ export default function DashboardPage() {
             {/* The Actual Card to Capture */}
             <div 
               ref={shareRef}
-              className="w-full max-w-sm bg-white rounded-[40px] shadow-2xl shadow-slate-200 p-8 border border-slate-100 relative overflow-hidden"
+              className="w-full max-w-sm bg-slate-950 rounded-[48px] shadow-2xl p-10 relative overflow-hidden text-white"
             >
-              {/* Decorative Background Elements */}
-              <div className="absolute top-0 right-0 w-32 h-32 bg-[#4CAF85]/5 rounded-full -mr-16 -mt-16"></div>
-              <div className="absolute bottom-0 left-0 w-32 h-32 bg-[#F28B6E]/5 rounded-full -ml-16 -mb-16"></div>
-
+              {/* Luxury Background Accents */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-[#4CAF85] opacity-20 blur-[100px] -mr-32 -mt-32"></div>
+              <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#F28B6E] opacity-10 blur-[100px] -ml-32 -mb-32"></div>
+              
               <div className="relative z-10">
-                <div className="flex justify-between items-start mb-10">
-                  <Logo size={20} className="gap-2" />
-                  <div className="text-right">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Bulan</p>
-                    <p className="text-xs font-bold text-slate-900">{format(new Date(selectedMonth), 'MMMM yyyy', { locale: id })}</p>
+                <div className="flex justify-between items-center mb-12">
+                  <Logo size={18} className="gap-2 brightness-0 invert" />
+                  <div className="bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
+                    <p className="text-[10px] font-black tracking-widest text-white/70 uppercase">
+                      {format(new Date(selectedMonth), 'MMM yyyy', { locale: id })}
+                    </p>
                   </div>
                 </div>
 
-                <div className="mb-10">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Total Pengeluaran</p>
-                  <h2 className="text-4xl font-black text-slate-900 tracking-tight">{formatIDR(totalExpense).split(',')[0]}</h2>
-                  <div className="w-12 h-1.5 bg-[#F28B6E] rounded-full mt-4"></div>
+                <div className="space-y-1 mb-12">
+                   <p className="text-xs font-bold text-white/50 uppercase tracking-[0.2em] mb-2">Total Pengeluaran</p>
+                   <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-bold text-white/40 italic">Rp</span>
+                      <h2 className="text-5xl font-black tracking-tighter leading-none">
+                        {formatIDR(totalExpense).split(',')[0].replace('Rp', '').trim()}
+                      </h2>
+                   </div>
                 </div>
 
-                {/* Mini Chart */}
-                <div className="h-32 w-full mb-10">
+                {/* Modern Visual Graph (Minimalist) */}
+                <div className="h-40 w-full mb-12 -mx-4">
                    <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={chartData}>
                         <defs>
-                          <linearGradient id="shareGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#F28B6E" stopOpacity={0.2}/>
-                            <stop offset="95%" stopColor="#F28B6E" stopOpacity={0}/>
+                          <linearGradient id="modernGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#4CAF85" stopOpacity={0.4}/>
+                            <stop offset="95%" stopColor="#4CAF85" stopOpacity={0}/>
                           </linearGradient>
                         </defs>
                         <Area 
                           type="monotone" 
                           dataKey="expense" 
-                          stroke="#F28B6E" 
-                          strokeWidth={4} 
-                          fill="url(#shareGrad)" 
+                          stroke="#4CAF85" 
+                          strokeWidth={6} 
+                          fill="url(#modernGrad)" 
                           animationDuration={0}
                         />
                       </AreaChart>
                    </ResponsiveContainer>
                 </div>
 
-                <div className="flex items-center justify-between pt-8 border-t border-slate-50">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs border border-slate-200 overflow-hidden">
-                      <img src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.displayName}`} alt="User" className="w-full h-full object-cover" />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl border-2 border-white/20 p-0.5 shadow-lg overflow-hidden">
+                      <img src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.displayName}`} alt="User" className="w-full h-full object-cover rounded-[14px]" />
                     </div>
-                    <p className="text-[10px] font-bold text-slate-700">{user.displayName}</p>
+                    <div>
+                      <p className="text-xs font-black text-white">{user.displayName}</p>
+                      <p className="text-[10px] font-bold text-white/40 tracking-wider">Flowance Premium</p>
+                    </div>
                   </div>
-                  <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">flowance.app</p>
+                  <div className="text-right">
+                     <p className="text-[10px] font-black text-[#4CAF85] tracking-widest uppercase mb-0.5">Verified</p>
+                     <div className="w-12 h-1 bg-[#4CAF85] rounded-full ml-auto"></div>
+                  </div>
                 </div>
               </div>
 
-              {/* Watermark */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-12 pointer-events-none opacity-[0.03] select-none">
-                 <p className="text-6xl font-black whitespace-nowrap">FLOWANCE FLOWANCE</p>
+              {/* Sophisticated Watermark */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-45 pointer-events-none opacity-[0.02] select-none scale-150">
+                 <p className="text-9xl font-black whitespace-nowrap italic">SECURE FINANCE FLOWANCE SECURE</p>
               </div>
             </div>
 

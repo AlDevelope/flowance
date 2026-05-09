@@ -4,6 +4,9 @@
   --color-sage: #4CAF85;
   --color-coral: #F28B6E;
   --color-sky: #7BB8D4;
+
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui;
+  --font-display: var(--font-display), ui-serif, system-ui;
 }
 
 body {

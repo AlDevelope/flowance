@@ -16,7 +16,8 @@ export const authOptions: NextAuthOptions = {
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "text" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
+        remember: { label: "Remember Me", type: "text" }
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -37,7 +38,11 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Password salah, silakan coba lagi atau daftar");
         }
 
-        return user;
+        // Return user with remember flag
+        return {
+          ...user,
+          rememberMe: credentials.remember === 'true'
+        };
       }
     })
   ],
@@ -53,16 +58,37 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.email = user.email;
+        token.rememberMe = (user as any).rememberMe;
       }
+
+      // Enforce 24-hour limit if "Remember Me" is not checked
+      if (token.rememberMe === false) {
+        const iat = token.iat as number;
+        if (iat) {
+          const nowInSeconds = Math.floor(Date.now() / 1000);
+          const oneDayInSeconds = 24 * 60 * 60;
+          if (nowInSeconds - iat > oneDayInSeconds) {
+            // Token has expired for non-remembered session
+            return {}; // Effectively invalidates the session
+          }
+        }
+      }
+
       if (trigger === "update" && session?.name) {
         token.name = session.name;
       }
+      
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         (session.user as any).id = token.id;
       }
+      
+      // If remember me is NOT checked, we could set short expiration
+      // But NextAuth doesn't easily allow per-session cookie expiry via standard callbacks.
+      // A common way is to set standard maxAge and just handle it in JWT.
+      
       return session;
     },
   },
