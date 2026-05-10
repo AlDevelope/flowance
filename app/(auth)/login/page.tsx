@@ -5,18 +5,25 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Wallet, ArrowRight, ShieldCheck, PieChart, Target } from "lucide-react";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { Logo } from "@/components/Logo";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session, status } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.push("/");
+    }
+  }, [status, router]);
 
   useEffect(() => {
     if (searchParams.get("signup") === "success") {

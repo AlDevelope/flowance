@@ -13,6 +13,16 @@ export async function POST(req: Request) {
 
     const { amount, type, categoryId, accountId, date, note } = await req.json();
 
+    // Verify ownership of account and category
+    const [account, category] = await Promise.all([
+      prisma.financeAccount.findFirst({ where: { id: accountId, userId: user.id } }),
+      prisma.category.findFirst({ where: { id: categoryId, userId: user.id } })
+    ]);
+
+    if (!account || !category) {
+      return NextResponse.json({ message: "Account or Category not found or unauthorized" }, { status: 403 });
+    }
+
     const transaction = await prisma.transaction.create({
       data: {
         amount,

@@ -13,6 +13,15 @@ export async function POST(req: Request) {
 
     const { categoryId, amount, month } = await req.json();
 
+    // Verify category ownership
+    const category = await prisma.category.findFirst({
+      where: { id: categoryId, userId: user.id }
+    });
+
+    if (!category) {
+      return NextResponse.json({ message: "Category not found or unauthorized" }, { status: 403 });
+    }
+
     const budget = await prisma.budget.create({
       data: {
         categoryId,
