@@ -27,10 +27,6 @@ export function Sidebar() {
   const pathname = usePathname();
   const { user } = useStore();
 
-  const handleLogout = async () => {
-    await signOut({ callbackUrl: "/login" });
-  };
-
   return (
     <aside className="w-60 flex-shrink-0 bg-[#F9FAFB] border-r border-[#E5E7EB] flex flex-col">
       <div className="p-6">
@@ -69,12 +65,12 @@ export function Sidebar() {
 
       <div 
         className={cn(
-          "border-t border-[#E5E7EB] p-4 flex items-center gap-3",
+          "border-t border-slate-200 p-4 flex items-center gap-2",
           pathname === "/profile" && "bg-white"
         )}
       >
         <Link href="/profile" className="flex items-center gap-3 flex-1 min-w-0 group">
-          <div className="w-8 h-8 rounded-full bg-slate-200 border border-slate-300 overflow-hidden group-hover:ring-2 group-hover:ring-[#4CAF85] transition-all">
+          <div className="w-9 h-9 rounded-xl bg-slate-200 border border-slate-300 overflow-hidden group-hover:ring-2 group-hover:ring-[#4CAF85] transition-all">
             <img 
               src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.displayName}`} 
               alt="User" 
@@ -82,13 +78,14 @@ export function Sidebar() {
             />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-slate-900 truncate">{user.displayName}</p>
-            <p className="text-[10px] text-slate-500 truncate">{user.email || 'Pengaturan Profil'}</p>
+            <p className="text-sm font-bold text-slate-900 truncate font-display">{user.displayName}</p>
+            <p className="text-[10px] font-medium text-slate-500 truncate">{user.email || 'Pengaturan Profil'}</p>
           </div>
         </Link>
         <button 
-          onClick={handleLogout}
-          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+          onClick={() => signOut({ callbackUrl: "/login" })}
+          type="button"
+          className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all active:scale-95"
           title="Keluar"
         >
           <LogOut className="w-5 h-5" />

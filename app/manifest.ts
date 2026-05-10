@@ -12,8 +12,15 @@ export default function manifest(): MetadataRoute.Manifest {
     icons: [
       {
         src: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
+        sizes: '192x192',
+        type: 'image/png',
+        purpose: 'any maskable'
+      },
+      {
+        src: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
         sizes: '512x512',
         type: 'image/png',
+        purpose: 'any maskable'
       },
     ],
   };

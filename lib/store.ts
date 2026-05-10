@@ -52,14 +52,14 @@ interface AppState {
   updateUser: (data: Partial<AppState['user']>) => void;
 
   accounts: Account[];
-  addAccount: (account: Omit<Account, 'id'>) => void;
-  updateAccount: (id: string, account: Omit<Account, 'id'>) => void;
-  deleteAccount: (id: string) => void;
+  addAccount: (account: Omit<Account, 'id'>) => Promise<void>;
+  updateAccount: (id: string, account: Omit<Account, 'id'>) => Promise<void>;
+  deleteAccount: (id: string) => Promise<void>;
 
   categories: Category[];
-  addCategory: (category: Omit<Category, 'id'>) => void;
-  updateCategory: (id: string, category: Omit<Category, 'id'>) => void;
-  deleteCategory: (id: string) => void;
+  addCategory: (category: Omit<Category, 'id'>) => Promise<void>;
+  updateCategory: (id: string, category: Omit<Category, 'id'>) => Promise<void>;
+  deleteCategory: (id: string) => Promise<void>;
 
   transactions: Transaction[];
   addTransaction: (transaction: Omit<Transaction, 'id'>) => Promise<void>;
@@ -67,9 +67,9 @@ interface AppState {
   deleteTransaction: (id: string) => Promise<void>;
 
   budgets: Budget[];
-  addBudget: (budget: Omit<Budget, 'id'>) => void;
-  updateBudget: (id: string, budget: Omit<Budget, 'id'>) => void;
-  deleteBudget: (id: string) => void;
+  addBudget: (budget: Omit<Budget, 'id'>) => Promise<void>;
+  updateBudget: (id: string, budget: Omit<Budget, 'id'>) => Promise<void>;
+  deleteBudget: (id: string) => Promise<void>;
 
   hydrate: (data: {
     accounts?: Account[];
@@ -114,26 +114,70 @@ export const useStore = create<AppState>()(
       })),
 
       accounts: defaultAccounts,
-      addAccount: (account) => set((state) => ({
-        accounts: [...state.accounts, { ...account, id: Math.random().toString(36).substr(2, 9) }]
-      })),
-      updateAccount: (id, updatedAccount) => set((state) => ({
-        accounts: state.accounts.map((a) => a.id === id ? { ...updatedAccount, id } : a)
-      })),
-      deleteAccount: (id) => set((state) => ({
-        accounts: state.accounts.filter((a) => a.id !== id)
-      })),
+      addAccount: async (account) => {
+        const tempId = Math.random().toString(36).substr(2, 9);
+        set((state) => ({ accounts: [...state.accounts, { ...account, id: tempId }] }));
+        try {
+          const res = await fetch('/api/accounts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(account)
+          });
+          if (res.ok) {
+            const saved = await res.json();
+            set((state) => ({ accounts: state.accounts.map(a => a.id === tempId ? saved : a) }));
+          }
+        } catch (e) { console.error(e); }
+      },
+      updateAccount: async (id, updatedAccount) => {
+        set((state) => ({ accounts: state.accounts.map((a) => a.id === id ? { ...updatedAccount, id } : a) }));
+        try {
+          await fetch(`/api/accounts/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedAccount)
+          });
+        } catch (e) { console.error(e); }
+      },
+      deleteAccount: async (id) => {
+        set((state) => ({ accounts: state.accounts.filter((a) => a.id !== id) }));
+        try {
+          await fetch(`/api/accounts/${id}`, { method: 'DELETE' });
+        } catch (e) { console.error(e); }
+      },
 
       categories: defaultCategories,
-      addCategory: (category) => set((state) => ({
-        categories: [...state.categories, { ...category, id: Math.random().toString(36).substr(2, 9) }]
-      })),
-      updateCategory: (id, updatedCategory) => set((state) => ({
-        categories: state.categories.map((c) => c.id === id ? { ...updatedCategory, id } : c)
-      })),
-      deleteCategory: (id) => set((state) => ({
-        categories: state.categories.filter((c) => c.id !== id)
-      })),
+      addCategory: async (category) => {
+        const tempId = Math.random().toString(36).substr(2, 9);
+        set((state) => ({ categories: [...state.categories, { ...category, id: tempId }] }));
+        try {
+          const res = await fetch('/api/categories', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(category)
+          });
+          if (res.ok) {
+            const saved = await res.json();
+            set((state) => ({ categories: state.categories.map(c => c.id === tempId ? saved : c) }));
+          }
+        } catch (e) { console.error(e); }
+      },
+      updateCategory: async (id, updatedCategory) => {
+        set((state) => ({ categories: state.categories.map((c) => c.id === id ? { ...updatedCategory, id } : c) }));
+        try {
+          await fetch(`/api/categories/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedCategory)
+          });
+        } catch (e) { console.error(e); }
+      },
+      deleteCategory: async (id) => {
+        set((state) => ({ categories: state.categories.filter((c) => c.id !== id) }));
+        try {
+          await fetch(`/api/categories/${id}`, { method: 'DELETE' });
+        } catch (e) { console.error(e); }
+      },
 
       transactions: [],
       addTransaction: async (transaction) => {
@@ -188,15 +232,37 @@ export const useStore = create<AppState>()(
       },
 
       budgets: [],
-      addBudget: (budget) => set((state) => ({
-        budgets: [...state.budgets, { ...budget, id: Math.random().toString(36).substr(2, 9) }]
-      })),
-      updateBudget: (id, updatedBudget) => set((state) => ({
-        budgets: state.budgets.map((b) => b.id === id ? { ...updatedBudget, id } : b)
-      })),
-      deleteBudget: (id) => set((state) => ({
-        budgets: state.budgets.filter((b) => b.id !== id)
-      })),
+      addBudget: async (budget) => {
+        const tempId = Math.random().toString(36).substr(2, 9);
+        set((state) => ({ budgets: [...state.budgets, { ...budget, id: tempId }] }));
+        try {
+          const res = await fetch('/api/budgets', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(budget)
+          });
+          if (res.ok) {
+            const saved = await res.json();
+            set((state) => ({ budgets: state.budgets.map(b => b.id === tempId ? saved : b) }));
+          }
+        } catch (e) { console.error(e); }
+      },
+      updateBudget: async (id, updatedBudget) => {
+        set((state) => ({ budgets: state.budgets.map((b) => b.id === id ? { ...updatedBudget, id } : b) }));
+        try {
+          await fetch(`/api/budgets/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedBudget)
+          });
+        } catch (e) { console.error(e); }
+      },
+      deleteBudget: async (id) => {
+        set((state) => ({ budgets: state.budgets.filter((b) => b.id !== id) }));
+        try {
+          await fetch(`/api/budgets/${id}`, { method: 'DELETE' });
+        } catch (e) { console.error(e); }
+      },
       
       hydrate: (data) => set((state) => ({
         accounts: data.accounts || state.accounts,

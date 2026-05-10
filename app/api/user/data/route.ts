@@ -14,7 +14,7 @@ export async function GET(req: Request) {
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       include: {
-        accounts: true,
+        financeAccounts: true,
         categories: true,
         transactions: true,
         budgets: true,
@@ -26,11 +26,11 @@ export async function GET(req: Request) {
     }
 
     return NextResponse.json({
-      accounts: user.accounts,
+      accounts: user.financeAccounts,
       categories: user.categories,
       transactions: user.transactions.map(t => ({
         ...t,
-        date: t.date.toISOString(),
+        date: t.date.toISOString().split('T')[0], // Ensure YYYY-MM-DD
       })),
       budgets: user.budgets,
     });

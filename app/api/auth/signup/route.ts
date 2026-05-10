@@ -38,7 +38,7 @@ export async function POST(req: Request) {
           ]
         },
         // Create default accounts
-        accounts: {
+        financeAccounts: {
           create: [
             { name: 'Tunai', balance: 0, color: '#4CAF85', icon: '💵' },
             { name: 'E-Wallet', balance: 0, color: '#3B82F6', icon: '📱' },
@@ -50,9 +50,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ 
       message: "User created successfully",
       user: { id: user.id, email: user.email, name: user.name }
-    });
+    }, { status: 201 });
   } catch (error: any) {
-    console.error("SIGNUP_ERROR", error);
-    return NextResponse.json({ message: "Internal Error" }, { status: 500 });
+    console.error("SIGNUP_ERROR:", error);
+    
+    // Explicitly handle Prisma Unique Constraint Error (P2002)
+    if (error.code === 'P2002') {
+      return NextResponse.json({ 
+        message: "Email ini sudah terdaftar. Silakan gunakan email lain atau masuk.",
+        code: "EMAIL_EXISTS" 
+      }, { status: 400 });
+    }
+
+    return NextResponse.json({ 
+      message: "Terjadi kesalahan pada database. Pastikan koneksi benar dan tabel sudah dibuat.",
+      details: error.message 
+    }, { status: 500 });
   }
 }
